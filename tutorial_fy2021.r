@@ -4,6 +4,7 @@
 # Yuzuru Utsunomiya, Ph. D.
 #
 # よく使うキーバインド
+# Shift+矢印:部分選択
 # Ctrl+Enter:選択部分を実行
 # Ctrl+s:上書き保存
 # Ctrl+Shift+c:選択部分をコメントアウト
