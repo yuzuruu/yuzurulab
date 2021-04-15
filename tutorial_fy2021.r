@@ -7,7 +7,6 @@
 # Shift+矢印:部分選択
 # Ctrl+Enter:選択部分を実行
 # Ctrl+s:上書き保存
-# Ctrl + z:もとに戻す（何度でもやりなおしできる）
 # Ctrl+Shift+c:選択部分をコメントアウト
 # 
 # くわしいことはHelp -> Cheetsheetsからチートシートをダウンロード
@@ -16,10 +15,12 @@
 # 1回インストールするだけでよい。起動するたびにしなくてもよい
 # インストールさえしてしまえばコメントアウトしてもよい。
 # install.packages("tidyverse")
+# install.packages("khroma")
 
 # tidyverseパッケージを読み込む
 # 起動するたびにする。
 library(tidyverse)
+# library(khroma)
 
 # irisデータで散布図を書いてみる
 # irisデータは、統計解析パッケージのお勉強に最もよく使われるデータ
@@ -37,6 +38,7 @@ iris_scatterplot <-
       color = Species   # 塗り分けに使う変数
       )
     ) +
+
   # 散布図を描く。
   geom_point() + 
   # テーマを適用する。
@@ -44,6 +46,27 @@ iris_scatterplot <-
 
 # オブジェクトを表示する
 iris_scatterplot
+
+# オブジェクトを事後的に編集もできますよ
+# もちろん各形式にて保存もOK
+iris_scatterplot + 
+  labs(
+    title = "S.Length and P. Length by species"
+  ) + 
+  scale_color_okabeito() +
+  theme(
+    axis.text = element_text(
+      size = 12
+    ),
+    legend.text = element_text(
+      size = 12
+    ),
+    legend.position = c(0.8,0.2),
+  )
+# save the figure
+ggsave("iris_scatterplot.png")
+
+
 
 # 宿題
 # https://kazutan.github.io/fukuokaR11/intro_ggplot2.html
