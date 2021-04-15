@@ -36,9 +36,8 @@ iris_scatterplot <-
       x = Sepal.Length, # x軸に使う変数
       y = Petal.Length, # y軸に使う変数
       color = Species   # 塗り分けに使う変数
-      )
-    ) +
-
+    )
+  ) +
   # 散布図を描く。
   geom_point() + 
   # テーマを適用する。
@@ -73,4 +72,3 @@ ggsave("iris_scatterplot.png")
 # を眺めて、いろいろ設定をいじって挙動を確認する。
 # 結果をggplot2::ggsave()関数を使ってpng形式にて保存、Google chat上に投稿。
 # メインタイトルに自分の名前をローマ字で記入すること。
-
