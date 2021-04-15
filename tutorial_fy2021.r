@@ -20,7 +20,7 @@
 # tidyverseパッケージを読み込む
 # 起動するたびにする。
 library(tidyverse)
-# library(khroma)
+library(khroma)
 
 # irisデータで散布図を書いてみる
 # irisデータは、統計解析パッケージのお勉強に最もよく使われるデータ
