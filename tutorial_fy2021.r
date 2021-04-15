@@ -38,7 +38,6 @@ iris_scatterplot <-
       color = Species   # 塗り分けに使う変数
     )
   ) +
-  
   # 散布図を描く。
   geom_point() + 
   # テーマを適用する。
