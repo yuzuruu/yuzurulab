@@ -200,52 +200,6 @@ working_hours_thailand_02 <-
     strip.background = element_blank(),
     strip.text = element_text(size = 12)
   )
-# 
-# 
-# 課題用
-working_hours_thailand_03 <- 
-  working_hours %>% 
-  dplyr::filter(Sex != "Total" & Economic_activities != "Not classified") %>% 
-  ggplot2::ggplot(
-    aes(
-      x = Time,
-      y = Number,
-      colour = Status,
-      shape = Status
-    )
-  ) +
-  geom_line() +
-  geom_point() +
-  scale_x_continuous(
-    limits = c(2010, 2019),
-    breaks = seq(2010, 2019, 2)
-  ) + 
-  scale_color_smoothrainbow(
-    discrete = TRUE
-  ) + 
-  labs(
-    title = "Mean weekly working hours per capita by Economic activity and gender",
-    subtitle = "(Thailand, 2010-2019, by Labour Force Survey)",
-    x = "Year",
-    y = "Working hours (Unit: hour)"
-  ) +
-  facet_grid(Sex ~ Economic_activities) +
-  theme_classic() +
-  theme(
-    axis.text = element_text(
-      size = 10
-    ),
-    legend.position = "bottom",
-    legend.text = element_text(size = 12),
-    strip.background = element_blank(),
-    strip.text = element_text(size = 12)
-  )
-
-# save the figure
-ggsave(
-  filename = "working_hours_thailand_03.png",
-  plot = working_hours_thailand_03
-  )
 #
 ##
 ### --- END --- ###
