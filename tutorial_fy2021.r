@@ -17,6 +17,7 @@
 # install.packages("tidyverse")
 # install.packages("khroma")
 
+# ---- read.library ----
 # tidyverseパッケージを読み込む
 # 起動するたびにする。
 library(tidyverse)
@@ -64,11 +65,141 @@ iris_scatterplot +
   )
 # save the figure
 ggsave("iris_scatterplot.png")
-
-
-
-# 宿題
-# https://kazutan.github.io/fukuokaR11/intro_ggplot2.html
-# を眺めて、いろいろ設定をいじって挙動を確認する。
-# 結果をggplot2::ggsave()関数を使ってpng形式にて保存、Google chat上に投稿。
-# メインタイトルに自分の名前をローマ字で記入すること。
+#
+##
+### --- END --- ###
+# 
+# 
+# ---- line.plot ----
+# 折れ線グラフを描く
+# 
+# 1.折れ線グラフ用データセットを読み込んでTidyな形にする。
+# データはILOからダウンロードしたものを加工してつくった。
+working_hours <- 
+  # データを読み込む
+  # readxlパッケージはtidyverseパッケージにバンドルされる。
+  # library(tidyverse)すれば自動的に読み込まれる
+  readxl::read_excel(
+    # ファイル名と場所を指定する
+    path = "working_hours.xlsx",
+    # MSExcelファイル内にあるシートを選ぶ
+    sheet = "Thailand",
+    # 列名が設定されているか指定する
+    col_names = TRUE
+    ) %>% 
+  # データを整形する
+  # tidyrパッケージはtidyverseパッケージにバンドルされる。
+  # library(tidyverse)すれば自動的に読み込まれる
+  # 読み込んだ元データとtidyに整形したデータとを見比べると、差異がわかる
+  # Rはtidyなデータが大好き。
+  tidyr::pivot_longer(
+    # 整形対象となる列を選ぶ
+    # くわしくは竹澤先生のサイトを参照
+    # http://cse.naro.affrc.go.jp/takezawa/r-tips/r/13.html
+    cols = colnames(.)[c(6:9)], # .は、.があるところにデータが入るという意味。
+    # 整形対象列名を格納する列につける名前を決める
+    names_to = "Status",
+    # 整形対象列にはいっていたデータを格納する列につける名前を決める
+    values_to = "Number"
+  ) 
+# 
+# 2.基本の折れ線グラフを描く
+# 黒い線とマーカーがついてるだけ。
+working_hours_thailand_01 <- 
+  working_hours %>% 
+  # 必要なデータだけを取り出す。
+  # 性別：合計
+  # 産業：総計
+  # 就業状態：ぜんぶ
+  # 
+  # 演算子(==やら&やら)は重要だから覚えましょー
+  # くわしくは竹澤先生のサイト参照
+  # http://cse.naro.affrc.go.jp/takezawa/r-tips/r/28.html
+  dplyr::filter(
+    Sex == "Total" & Economic_activities == "Total" & Status == "Total"
+  ) %>% 
+  # おなじみggplot
+  ggplot2::ggplot(
+    # 作図領域をつくる
+    aes(
+      x = Time,
+      y = Number
+      )
+  ) +
+  # 折れ線グラフを描く
+  geom_line() +
+  # 折れ線グラフx軸メモリを設定する
+  # 設定しないと中途半端な目盛りになる。年号なのになぜか小数点がつくとか。
+  scale_x_continuous(
+    limits = c(2010, 2019),# 区間の両端を設定する
+    breaks = seq(2010, 2019, 1)　# x軸目盛り間隔を設定する
+  ) + 
+  # 折れ線グラフy軸目盛りを設定する
+  # 内容はx軸と同様
+  scale_y_continuous(
+    limits = c(40,45),
+    breaks = seq(40, 45, 1)
+  ) +
+  # 折れ線グラフにマーカーをつける
+  geom_point(
+    size = 3 # マーカーサイズ 
+  ) +
+  # 表題と副題とx軸名とy軸名を設定する
+  # 日本語も使えるが、設定が面倒。日本語をつかわなければ面倒はない
+  labs(
+    title = "Mean weekly working hours per capita",
+    subtitle = "(Thailand, 2010-2019, by Labour Force Survey)",
+    x = "Year",
+    y = "Working hours (Unit: hour)"
+  ) +
+  # おおまかなテーマを決める
+  # いろいろなテーマがあるよ
+  # くわしくは、?theme_classicするとRが教えてくれる
+  theme_classic() +
+  # より詳細なテーマを決める
+  theme(
+    axis.text = element_text(size = 12) # 軸テキストサイズ指定
+  )
+# 
+# 
+# 層別して並べる折れ線グラフ
+working_hours_thailand_02 <- 
+  working_hours %>% 
+  dplyr::filter(Sex != "Total" & Economic_activities == "Total") %>% 
+  ggplot2::ggplot(
+    aes(
+      x = Time,
+      y = Number,
+      colour = Status,
+      shape = Status
+    )
+  ) +
+  geom_line() +
+  geom_point() +
+  labs(
+    title = "Mean weekly working hours per capita",
+    subtitle = "(Thailand, 2010-2019, by Labour Force Survey)",
+    x = "Year",
+    y = "Working hours (Unit: hour)"
+  ) +
+  scale_x_continuous(
+    limits = c(2010, 2019),
+    breaks = seq(2010, 2019, 1)
+  ) + 
+  scale_color_okabeito() + 
+  # グラフを性別にならべる
+  facet_wrap(~ Sex) +
+  theme_classic() +
+  # 見た目を詳細に設定する
+  theme(
+    axis.text = element_text(
+      size = 10
+    ),
+    legend.position = "bottom",
+    legend.text = element_text(size = 12),
+    strip.background = element_blank(),
+    strip.text = element_text(size = 12)
+  )
+#
+##
+### --- END --- ###
