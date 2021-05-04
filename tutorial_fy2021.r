@@ -16,6 +16,9 @@
 # インストールさえしてしまえばコメントアウトしてもよい。
 # install.packages("tidyverse")
 # install.packages("khroma")
+# install.packages("viridis")
+# install.packages("ggtext")
+# install.packages("GGally")
 
 # ---- read.library ----
 # tidyverseパッケージを読み込む
@@ -23,7 +26,8 @@
 library(tidyverse)
 library(khroma)
 library(viridis)
-
+library(ggtext)
+library(GGally)
 
 # irisデータで散布図を書いてみる
 # irisデータは、統計解析パッケージのお勉強に最もよく使われるデータ
@@ -253,14 +257,15 @@ ggsave(
 ### --- END --- ###
 
 
-
+# ---- density.plot ----
+# 
 iris_density_01 <- 
   iris %>% 
   ggplot2::ggplot(
     aes(x = Sepal.Length)
   ) +
   geom_density()
-
+# 
 iris_densit_02 <- 
   iris %>% 
   ggplot2::ggplot(
@@ -271,7 +276,7 @@ iris_densit_02 <-
       )
   ) +
   geom_density(alpha = 0.5, colour = NA) 
-
+# 
 iris_density_03 <- 
   iris %>% 
   pivot_longer(
@@ -289,7 +294,12 @@ iris_density_03 <-
   geom_density(
     alpha = 0.5
     ) +
-  labs(x = "Size (Unit:cm)", y = "Density") + 
+  labs(
+    title = "Density plot of size by trait", 
+    caption = "Source: Edgar Anderson (1936). The species problem in Iris. *Annals of the Missouri Botanical Garden*. 23 (3): 457–509. ",
+    x = "Size (Unit:cm)", 
+    y = "Density"
+    ) + 
   facet_wrap(
     facets = ~ Traits,
     scales = "free"
@@ -298,14 +308,20 @@ iris_density_03 <-
   scale_colour_muted(reverse = TRUE) + 
   theme_classic() + 
   theme(
+    axis.text = element_text(size = 12),
     legend.position = "bottom",
     legend.text = element_text(size = 12),
-    axis.text = element_text(size = 12),
+    plot.caption = ggtext::element_markdown(),
     strip.background = element_blank(),
     strip.text = element_text(size = 12)
   )
-
-
+#
+##
+### --- END --- ###
+#
+#
+# ---- scatter plot ----
+# 
 iris_scatter_01 <- 
   iris %>% 
   ggplot2::ggplot(
@@ -315,8 +331,7 @@ iris_scatter_01 <-
     )
   ) + 
   geom_point()
-
-
+# 
 iris_scatter_02 <- 
   iris %>% 
   ggplot2::ggplot(
@@ -327,7 +342,62 @@ iris_scatter_02 <-
     )
   ) + 
   geom_point() + 
-  scale_color_okabeito()
-
-
-head(iris)
+  scale_color_okabeito() +
+  theme_classic() +
+  theme(
+    legend.position = "bottom",
+    legend.text = element_text(size =12),
+    axis.text = element_text(size =12)
+  )
+# 
+# 散布図行列
+# 多変量データにおいて、１枚ずつ散布図やら密度プロットを描くことは面倒極まりない。
+# 一度に書いてしまおうというggplotのラッパー関数だよーん。
+# 課題はこういう感じで描きますよ。
+iris_pairs_01 <- 
+  iris %>% 
+  GGally::ggpairs(
+    aes(
+      color = Species,
+      fill = Species,
+      alpha = 0.5
+    ),
+    # プロットするのは下記4変数のみ。
+    # Speciesは色や塗りつぶしに使うだけ。
+    columns = c(
+      "Sepal.Length", 
+      "Sepal.Width", 
+      "Petal.Length", 
+      "Petal.Width"
+      ),
+    # 右上に埋めるものを指定
+    # 連続量同士で散布図を作ってね、と指定
+    # 対角線にはデフォルトで要因別密度プロット指定済
+    # 詳細は下記ページ参照
+    # https://k-metrics.netlify.app/post/2018-09/modern_pairplot/
+    upper=list(continuous="points"),
+    # 左下に埋めるものを指定
+    # 連続量
+    lower=list(continuous="cor")
+        ) +
+  labs(
+    title = "Pair plot by traits and species of iris data",
+    subtitle = "Drawn by your name"
+    ) +
+  # khromaパッケージにあるカラーパレットだよん。
+  # 視認性は最高。
+  # くすぐりに、カラーパレット順番を入れ替えた
+  scale_color_contrast(reverse = TRUE) +
+  scale_fill_contrast(reverse = TRUE) +
+  # このあたりはいつものやつ。
+  # 設定用共通オブジェクトをつくってもいいんじゃない
+  theme_classic() +
+  theme(
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 10),
+    strip.background = element_blank(),
+    strip.text = element_text(size = 10)
+  )
+# 
+##
+### --- END --- ###
