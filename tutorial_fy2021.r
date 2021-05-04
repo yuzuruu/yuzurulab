@@ -22,6 +22,8 @@
 # 起動するたびにする。
 library(tidyverse)
 library(khroma)
+library(viridis)
+
 
 # irisデータで散布図を書いてみる
 # irisデータは、統計解析パッケージのお勉強に最もよく使われるデータ
@@ -200,6 +202,132 @@ working_hours_thailand_02 <-
     strip.background = element_blank(),
     strip.text = element_text(size = 12)
   )
+# 
+# 
+# 課題用
+working_hours_thailand_03 <- 
+  working_hours %>% 
+  dplyr::filter(Sex != "Total" & Economic_activities != "Not classified") %>% 
+  ggplot2::ggplot(
+    aes(
+      x = Time,
+      y = Number,
+      colour = Status,
+      shape = Status
+    )
+  ) +
+  geom_line() +
+  geom_point() +
+  scale_x_continuous(
+    limits = c(2010, 2019),
+    breaks = seq(2010, 2019, 2)
+  ) + 
+  scale_color_smoothrainbow(
+    discrete = TRUE
+  ) + 
+  labs(
+    title = "Mean weekly working hours per capita by Economic activity and gender",
+    subtitle = "(Thailand, 2010-2019, by Labour Force Survey)",
+    x = "Year",
+    y = "Working hours (Unit: hour)"
+  ) +
+  facet_grid(Sex ~ Economic_activities) +
+  theme_classic() +
+  theme(
+    axis.text = element_text(
+      size = 10
+    ),
+    legend.position = "bottom",
+    legend.text = element_text(size = 12),
+    strip.background = element_blank(),
+    strip.text = element_text(size = 12)
+  )
+
+# save the figure
+ggsave(
+  filename = "working_hours_thailand_03.pdf",
+  plot = working_hours_thailand_03
+  )
 #
 ##
 ### --- END --- ###
+
+
+
+iris_density_01 <- 
+  iris %>% 
+  ggplot2::ggplot(
+    aes(x = Sepal.Length)
+  ) +
+  geom_density()
+
+iris_densit_02 <- 
+  iris %>% 
+  ggplot2::ggplot(
+    aes(
+      x = Sepal.Length,
+      fill = Species,
+      color = ""
+      )
+  ) +
+  geom_density(alpha = 0.5, colour = NA) 
+
+iris_density_03 <- 
+  iris %>% 
+  pivot_longer(
+    cols = c("Sepal.Length","Sepal.Width","Petal.Length","Petal.Width"),
+    names_to = "Traits",
+    values_to = "size"
+  ) %>% 
+  ggplot2::ggplot(
+    aes(
+      x = size,
+      fill = Species,
+      colour = Species
+    )
+  ) +
+  geom_density(
+    alpha = 0.5
+    ) +
+  labs(x = "Size (Unit:cm)", y = "Density") + 
+  facet_wrap(
+    facets = ~ Traits,
+    scales = "free"
+    ) +
+  scale_fill_muted(reverse = TRUE) + 
+  scale_colour_muted(reverse = TRUE) + 
+  theme_classic() + 
+  theme(
+    legend.position = "bottom",
+    legend.text = element_text(size = 12),
+    axis.text = element_text(size = 12),
+    strip.background = element_blank(),
+    strip.text = element_text(size = 12)
+  )
+
+
+iris_scatter_01 <- 
+  iris %>% 
+  ggplot2::ggplot(
+    aes(
+      x = Sepal.Length,
+      y = Sepal.Width
+    )
+  ) + 
+  geom_point()
+
+
+iris_scatter_02 <- 
+  iris %>% 
+  ggplot2::ggplot(
+    aes(
+      x = Sepal.Length,
+      y = Sepal.Width,
+      colour = Species
+    )
+  ) + 
+  geom_point() + 
+  scale_color_okabeito()
+
+
+head(iris)
