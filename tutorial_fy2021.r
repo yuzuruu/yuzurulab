@@ -198,9 +198,9 @@ working_hours_thailand_02 <-
       size = 10
     ),
     legend.position = "bottom",
-    legend.text = element_text(size = 12),
+    legend.text = element_text(size = 10),
     strip.background = element_blank(),
-    strip.text = element_text(size = 12)
+    strip.text = element_text(size = 10)
   )
 # 
 # 
