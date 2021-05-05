@@ -257,27 +257,65 @@ ggsave(
 ### --- END --- ###
 
 
-# ---- density.plot ----
-# 
+# ---- density.plot.and.scatter.plot ----
+# 密度プロットを描画する
+# 基本の描き方
 iris_density_01 <- 
-  iris %>% 
-  ggplot2::ggplot(
-    aes(x = Sepal.Length)
-  ) +
-  geom_density()
-# 
-iris_densit_02 <- 
   iris %>% 
   ggplot2::ggplot(
     aes(
       x = Sepal.Length,
       fill = Species,
-      color = ""
-      )
+      color = Species
+    )
   ) +
-  geom_density(alpha = 0.5, colour = NA) 
-# 
-iris_density_03 <- 
+  # 密度プロットを描く
+  geom_density(alpha =0.5)
+# 基本的な散布図描き方
+# データはおなじみiris
+iris_scatter_01 <- 
+  iris %>% 
+  ggplot2::ggplot(
+    aes(
+      x = Sepal.Length,
+      y = Sepal.Width
+    )
+  ) + 
+  geom_point()
+# 散布図その2
+iris_scatter_02 <- 
+  iris %>% 
+  ggplot2::ggplot(
+    aes(
+      x = Sepal.Length,
+      y = Sepal.Width,
+      colour = Species
+    )
+  ) + 
+  # 点を描くにはgeom_point()
+  # くわしい設定は?geom_point()をみてね
+  geom_point() + 
+  # これもおなじみ岡部・伊藤のカラーユニバーサルデザインを使ったカラーパレット
+  scale_color_okabeito() +
+  theme_classic() +
+  theme(
+    legend.position = "bottom",　　　　　　# 凡例はx軸下に
+    legend.text = element_text(size =12),
+    axis.text = element_text(size =12)
+  )
+#
+##
+### --- END --- ###
+#
+#
+# ---- density.scatter.assignment ----
+# ここから先は課題です。
+# 課題は2つあります。
+# 品種毎に点を塗り分ける
+# やっぱりデータはiris
+# 実データもいいけれど、これで練習を積めるならばそれはそれで。
+# 密度プロットを修飾する
+iris_density_02 <- 
   iris %>% 
   pivot_longer(
     cols = c("Sepal.Length","Sepal.Width","Petal.Length","Petal.Width"),
@@ -293,17 +331,17 @@ iris_density_03 <-
   ) +
   geom_density(
     alpha = 0.5
-    ) +
+  ) +
   labs(
     title = "Density plot of size by trait", 
     caption = "Source: Edgar Anderson (1936). The species problem in Iris. *Annals of the Missouri Botanical Garden*. 23 (3): 457–509. ",
     x = "Size (Unit:cm)", 
     y = "Density"
-    ) + 
+  ) + 
   facet_wrap(
     facets = ~ Traits,
     scales = "free"
-    ) +
+  ) +
   scale_fill_muted(reverse = TRUE) + 
   scale_colour_muted(reverse = TRUE) + 
   theme_classic() + 
@@ -315,40 +353,9 @@ iris_density_03 <-
     strip.background = element_blank(),
     strip.text = element_text(size = 12)
   )
-#
-##
-### --- END --- ###
-#
-#
-# ---- scatter plot ----
+# save the figure above
+ggsave("iris_density_02.png", plot = iris_density_02)
 # 
-iris_scatter_01 <- 
-  iris %>% 
-  ggplot2::ggplot(
-    aes(
-      x = Sepal.Length,
-      y = Sepal.Width
-    )
-  ) + 
-  geom_point()
-# 
-iris_scatter_02 <- 
-  iris %>% 
-  ggplot2::ggplot(
-    aes(
-      x = Sepal.Length,
-      y = Sepal.Width,
-      colour = Species
-    )
-  ) + 
-  geom_point() + 
-  scale_color_okabeito() +
-  theme_classic() +
-  theme(
-    legend.position = "bottom",
-    legend.text = element_text(size =12),
-    axis.text = element_text(size =12)
-  )
 # 
 # 散布図行列
 # 多変量データにおいて、１枚ずつ散布図やら密度プロットを描くことは面倒極まりない。
@@ -356,11 +363,13 @@ iris_scatter_02 <-
 # 課題はこういう感じで描きますよ。
 iris_pairs_01 <- 
   iris %>% 
+  # GGally::ggpairs()とは：
+  # 散布図行列と相関行列と密度プロットをいっぺんに作画する関数
   GGally::ggpairs(
     aes(
       color = Species,
       fill = Species,
-      alpha = 0.5
+      alpha = 0.5　　　# 透明度。0.0で完全に透明。1.0で完全に不透明
     ),
     # プロットするのは下記4変数のみ。
     # Speciesは色や塗りつぶしに使うだけ。
@@ -380,6 +389,8 @@ iris_pairs_01 <-
     # 連続量
     lower=list(continuous="cor")
         ) +
+  # ラベル設定
+  # サブタイトルに貴君氏名を書き込んでね
   labs(
     title = "Pair plot by traits and species of iris data",
     subtitle = "Drawn by your name"
@@ -398,6 +409,8 @@ iris_pairs_01 <-
     strip.background = element_blank(),
     strip.text = element_text(size = 10)
   )
+# save the figure above
+ggsave("iris_pairs_01.png", plot = iris_pairs_01)
 # 
 ##
 ### --- END --- ###
