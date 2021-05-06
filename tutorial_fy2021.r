@@ -16,12 +16,18 @@
 # インストールさえしてしまえばコメントアウトしてもよい。
 # install.packages("tidyverse")
 # install.packages("khroma")
+# install.packages("viridis")
+# install.packages("ggtext")
+# install.packages("GGally")
 
 # ---- read.library ----
 # tidyverseパッケージを読み込む
 # 起動するたびにする。
 library(tidyverse)
 library(khroma)
+library(viridis)
+library(ggtext)
+library(GGally)
 
 # irisデータで散布図を書いてみる
 # irisデータは、統計解析パッケージのお勉強に最もよく使われるデータ
@@ -196,9 +202,106 @@ working_hours_thailand_02 <-
       size = 10
     ),
     legend.position = "bottom",
+    legend.text = element_text(size = 10),
+    strip.background = element_blank(),
+    strip.text = element_text(size = 10)
+  )
+# 
+# 
+# 課題用
+working_hours_thailand_03 <- 
+  working_hours %>% 
+  dplyr::filter(Sex != "Total" & Economic_activities != "Not classified") %>% 
+  ggplot2::ggplot(
+    aes(
+      x = Time,
+      y = Number,
+      colour = Status,
+      shape = Status
+    )
+  ) +
+  geom_line() +
+  geom_point() +
+  scale_x_continuous(
+    limits = c(2010, 2019),
+    breaks = seq(2010, 2019, 2)
+  ) + 
+  scale_color_smoothrainbow(
+    discrete = TRUE
+  ) + 
+  labs(
+    title = "Mean weekly working hours per capita by Economic activity and gender",
+    subtitle = "(Thailand, 2010-2019, by Labour Force Survey)",
+    x = "Year",
+    y = "Working hours (Unit: hour)"
+  ) +
+  facet_grid(Sex ~ Economic_activities) +
+  theme_classic() +
+  theme(
+    axis.text = element_text(
+      size = 10
+    ),
+    legend.position = "bottom",
     legend.text = element_text(size = 12),
     strip.background = element_blank(),
     strip.text = element_text(size = 12)
+  )
+
+# save the figure
+ggsave(
+  filename = "working_hours_thailand_03.pdf",
+  plot = working_hours_thailand_03
+  )
+#
+##
+### --- END --- ###
+
+
+# ---- density.plot.and.scatter.plot ----
+# 密度プロットを描画する
+# 基本の描き方
+iris_density_01 <- 
+  iris %>% 
+  ggplot2::ggplot(
+    aes(
+      x = Sepal.Length,
+      fill = Species,
+      color = Species
+    )
+  ) +
+  # 密度プロットを描く
+  geom_density(alpha =0.5)
+# 基本的な散布図描き方
+# データはおなじみiris
+iris_scatter_01 <- 
+  iris %>% 
+  ggplot2::ggplot(
+    aes(
+      x = Sepal.Length,
+      y = Sepal.Width
+    )
+  ) + 
+  geom_point()
+# 散布図その2
+iris_scatter_02 <- 
+  iris %>% 
+  ggplot2::ggplot(
+    aes(
+      x = Sepal.Length,
+      y = Sepal.Width,
+      colour = Species
+    )
+  ) + 
+  # 点を描くにはgeom_point()
+  # くわしい設定は?geom_point()をみてね
+  geom_point() + 
+  # これもおなじみ岡部・伊藤のカラーユニバーサルデザインを使ったカラーパレット
+  scale_color_okabeito() +
+  theme_classic() +
+  theme(
+    legend.position = "bottom",　　　　　　# 凡例はx軸下に
+    legend.text = element_text(size =12),
+    axis.text = element_text(size =12)
   )
 #
 ##
