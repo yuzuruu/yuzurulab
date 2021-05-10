@@ -306,3 +306,112 @@ iris_scatter_02 <-
 #
 ##
 ### --- END --- ###
+#
+#
+# ---- density.scatter.assignment ----
+# 模範解答だよーん
+# ここから先は課題です。
+# 課題は2つあります。
+# 品種毎に点を塗り分ける
+# やっぱりデータはiris
+# 実データもいいけれど、これで練習を積めるならばそれはそれで。
+# 密度プロットを修飾する
+iris_density_02 <- 
+  iris %>% 
+  pivot_longer(
+    cols = c("Sepal.Length","Sepal.Width","Petal.Length","Petal.Width"),
+    names_to = "Traits",
+    values_to = "size"
+  ) %>% 
+  ggplot2::ggplot(
+    aes(
+      x = size,
+      fill = Species,
+      colour = Species
+    )
+  ) +
+  geom_density(
+    alpha = 0.5
+  ) +
+  labs(
+    title = "Density plot of size by trait", 
+    caption = "Source: Edgar Anderson (1936). The species problem in Iris. *Annals of the Missouri Botanical Garden*. 23 (3): 457–509. ",
+    x = "Size (Unit:cm)", 
+    y = "Density"
+  ) + 
+  facet_wrap(
+    facets = ~ Traits,
+    scales = "free"
+  ) +
+  scale_fill_muted(reverse = TRUE) + 
+  scale_colour_muted(reverse = TRUE) + 
+  theme_classic() + 
+  theme(
+    axis.text = element_text(size = 12),
+    legend.position = "bottom",
+    legend.text = element_text(size = 12),
+    plot.caption = ggtext::element_markdown(),
+    strip.background = element_blank(),
+    strip.text = element_text(size = 12)
+  )
+# save the figure above
+ggsave("iris_density_02.png", plot = iris_density_02)
+# 
+# 
+# 散布図行列
+# 多変量データにおいて、１枚ずつ散布図やら密度プロットを描くことは面倒極まりない。
+# 一度に書いてしまおうというggplotのラッパー関数だよーん。
+# 課題はこういう感じで描きますよ。
+iris_pairs_01 <- 
+  iris %>% 
+  # GGally::ggpairs()とは：
+  # 散布図行列と相関行列と密度プロットをいっぺんに作画する関数
+  GGally::ggpairs(
+    aes(
+      color = Species,
+      fill = Species,
+      alpha = 0.5　　　# 透明度。0.0で完全に透明。1.0で完全に不透明
+    ),
+    # プロットするのは下記4変数のみ。
+    # Speciesは色や塗りつぶしに使うだけ。
+    columns = c(
+      "Sepal.Length", 
+      "Sepal.Width", 
+      "Petal.Length", 
+      "Petal.Width"
+      ),
+    # 右上に埋めるものを指定
+    # 連続量同士で散布図を作ってね、と指定
+    # 対角線にはデフォルトで要因別密度プロット指定済
+    # 詳細は下記ページ参照
+    # https://k-metrics.netlify.app/post/2018-09/modern_pairplot/
+    upper=list(continuous="points"),
+    # 左下に埋めるものを指定
+    # 連続量
+    lower=list(continuous="cor")
+        ) +
+  # ラベル設定
+  # サブタイトルに貴君氏名を書き込んでね
+  labs(
+    title = "Pair plot by traits and species of iris data",
+    subtitle = "Drawn by your name"
+    ) +
+  # khromaパッケージにあるカラーパレットだよん。
+  # 視認性は最高。
+  # くすぐりに、カラーパレット順番を入れ替えた
+  scale_color_contrast(reverse = TRUE) +
+  scale_fill_contrast(reverse = TRUE) +
+  # このあたりはいつものやつ。
+  # 設定用共通オブジェクトをつくってもいいんじゃない
+  theme_classic() +
+  theme(
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 10),
+    strip.background = element_blank(),
+    strip.text = element_text(size = 10)
+  )
+# save the figure above
+ggsave("iris_pairs_01.png", plot = iris_pairs_01)
+# 
+##
+### --- END --- ###
