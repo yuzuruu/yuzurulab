@@ -645,6 +645,11 @@ wh_data_table_01 <-
       )
     )
   )
+# ダウンロードしたデータを保存する
+# 毎度毎度保存すると大変なので、保存。
+saveRDS(wh_data_table_01, "wh_data_table_01.rds")
+# 保存したデータを読み込む
+wh_data_table_01 <- readRDS("wh_data_table_01.rds")
 #
 # 2. 作図する
 # 折れ線グラフ作図
