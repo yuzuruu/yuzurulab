@@ -14,24 +14,20 @@
 # tidyverseパッケージをインストール
 # 1回インストールするだけでよい。起動するたびにしなくてもよい
 # インストールさえしてしまえばコメントアウトしてもよい。
-# install.packages("estatapi")
 # install.packages("tidyverse")
 # install.packages("khroma")
 # install.packages("viridis")
 # install.packages("ggtext")
 # install.packages("GGally")
-# install.packages("ggf")
 
 # ---- read.library ----
 # tidyverseパッケージを読み込む
 # 起動するたびにする。
-library(estatapi)
 library(tidyverse)
 library(khroma)
 library(viridis)
 library(ggtext)
 library(GGally)
-library(ggfortify)
 
 # irisデータで散布図を書いてみる
 # irisデータは、統計解析パッケージのお勉強に最もよく使われるデータ
@@ -310,6 +306,10 @@ iris_scatter_02 <-
 #
 ##
 ### --- END --- ###
+
+#
+##
+### --- END --- ###
 #
 #
 # ---- density.scatter.assignment ----
@@ -383,7 +383,7 @@ iris_pairs_01 <-
       "Sepal.Width", 
       "Petal.Length", 
       "Petal.Width"
-      ),
+    ),
     # 右上に埋めるものを指定
     # 連続量同士で散布図を作ってね、と指定
     # 対角線にはデフォルトで要因別密度プロット指定済
@@ -393,13 +393,13 @@ iris_pairs_01 <-
     # 左下に埋めるものを指定
     # 連続量
     lower=list(continuous="cor")
-        ) +
+  ) +
   # ラベル設定
   # サブタイトルに貴君氏名を書き込んでね
   labs(
     title = "Pair plot by traits and species of iris data",
     subtitle = "Drawn by your name"
-    ) +
+  ) +
   # khromaパッケージにあるカラーパレットだよん。
   # 視認性は最高。
   # くすぐりに、カラーパレット順番を入れ替えた
@@ -492,7 +492,7 @@ wh_data_list <-
     # $の使い方は、Rでデータを扱うにはとっても重要。なれておくように。
     appId = appId$value,
     searchWord = "労働時間"
-    )%>% 
+  )%>% 
   # 長期時系列データのみを取り出す。
   # 時間が経過するにつれてどう変化するか知りたいのですから。
   dplyr::filter(
@@ -504,14 +504,14 @@ wh_data_list <-
     stringr::str_detect(
       STATISTICS_NAME, 
       "^毎月勤労統計調査　全国調査 長期時系列表" 
-      )
-    ) %>% 
+    )
+  ) %>% 
   dplyr::filter(
     stringr::str_detect(
       TITLE, 
       "^実数・指数累積データ 所定外労働時間　季節実数・指数累積データ 実数関連・月次"
-      )
     )
+  )
 # リストに含まれる必要なデータだけを抽出する
 # とりあえず労働時間に関する系列のみ
 wh_data_table <- 
@@ -525,13 +525,13 @@ wh_data_table <-
     # $は列を選ぶときに使う記号
     # `@id`は列名。
     statsDataId = wh_data_list[2,1]$`@id`
-    ) %>% 
+  ) %>% 
   dplyr::filter(表章項目 %in% c(
     "一人平均月間所定内労働時間数",
     "一人平均月間所定外労働時間数",
     "一人平均月間総実労働時間数"
-    )
-    )
+  )
+  )
 # 
 # ---
 # おまけ　その1
@@ -543,7 +543,7 @@ wh_data_table <-
 readr::write_excel_csv(
   x = wh_data_table, 
   file = "wh_data_table.csv"
-  )
+)
 # おまけ　その2
 # どこに何が書いてあるかは、列名を使って参照する。
 # 使う関数は以下に示す通り。
@@ -556,8 +556,8 @@ readr::write_excel_csv(
 levels(
   factor(
     wh_data_table$表章項目
-    )
   )
+)
 levels(factor(wh_data_table$就業形態))
 levels(factor(wh_data_table$事業所規模))
 levels(factor(wh_data_table$`産業分類(200711改定)`))
@@ -616,19 +616,19 @@ wh_data_table_01 <-
       base::paste0(
         year.month, 
         "/01"
-        )
       )
+    )
   ) %>% 
   # 条件に合うデータのみを取り出す
   # データ読み込みはここでおわり
   dplyr::filter(
     status == "就業形態計" &
-    size %in% c(
-      "100～499人",
-      "30～99人",
-      "500人以上"
+      size %in% c(
+        "100～499人",
+        "30～99人",
+        "500人以上"
       )
-    ) %>% 
+  ) %>% 
   # 因子型の順番を指定する
   # 企業規模にあわせてあとから作るグラフが並ぶようにする。
   # ここで処理しないと、Rは企業規模先頭にある数値から順番を評価する。
@@ -673,7 +673,7 @@ wh_data_line_01 <-
             x = year.month, 
             y = hours, 
             colour = trait#色は区分ごとに変える
-            )
+          )
         ) + 
         # 折れ線グラフをつくると宣言する
         geom_line() +
@@ -691,7 +691,7 @@ wh_data_line_01 <-
           nrow = 2,
           ncol = 2,
           scale = "free"
-          ) +
+        ) +
         # いつものテーマ
         theme_classic() +
         # 日本語をRでつくるグラフに埋め込むにはちょっとコツがいる
@@ -715,7 +715,7 @@ grDevices::cairo_pdf(
   filename = "wh_data_line_01.pdf",# ファイル名
   family =  "Noto Serif CJK JP",# フォントファミリー
   onefile = TRUE # 複数あるグラフオブジェクトを単一pdfファイル内にまとめる
-  )
+)
 # グラフオブジェクトを実行
 wh_data_line_01$figure
 # おまじないはおしまい
