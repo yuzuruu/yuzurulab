@@ -14,20 +14,24 @@
 # tidyverseパッケージをインストール
 # 1回インストールするだけでよい。起動するたびにしなくてもよい
 # インストールさえしてしまえばコメントアウトしてもよい。
+# install.packages("estatapi")
 # install.packages("tidyverse")
 # install.packages("khroma")
 # install.packages("viridis")
 # install.packages("ggtext")
 # install.packages("GGally")
+# install.packages("ggf")
 
 # ---- read.library ----
 # tidyverseパッケージを読み込む
 # 起動するたびにする。
+library(estatapi)
 library(tidyverse)
 library(khroma)
 library(viridis)
 library(ggtext)
 library(GGally)
+library(ggfortify)
 
 # irisデータで散布図を書いてみる
 # irisデータは、統計解析パッケージのお勉強に最もよく使われるデータ
@@ -415,3 +419,309 @@ ggsave("iris_pairs_01.png", plot = iris_pairs_01)
 # 
 ##
 ### --- END --- ###
+
+
+# ---- stat.working.hours ----
+# 目的
+# 1.労働時間年次/月次推移を表現する統計モデリング開発する。
+# 2.特に、生産システム伸長と労働組合衰退とが与える影響を加味する
+# 3.同じ現象が海外においても観察されるか検討する。
+# 
+# Rを使ってできるようになりたいテクニック
+# 1.記述統計量算出
+# 2.日本語が混在するグラフ作図
+# 3.統計的仮説検定 
+# 4.回帰分析 
+# 5.初歩的な時系列モデリング（ARとARIMA） 
+# データを眺める限り、なんとかなりそうな気がする。
+# 
+# 手順
+# 1. 日本における労働時間に関するデータをあつめる
+# 2. 作図する
+# 3. 記述統計量を検討する
+# 4. モデルをつくる
+# 5. 海外データを集める
+# 6. 2.-4.と同じ手順を実行する
+# 7. 結果を味わう
+# 8. 長崎大学経済学部懸賞論文に投稿する
+# 
+# 役立ちそうな情報源
+# 中澤先生
+# http://minato.sip21c.org/statlib/stat-all-r9.pdf
+# Rを使った基本的な分析について。
+# 上記はだいたいカバーしている。ただし解説はそこまで親切ではない。
+# 
+# 小波先生
+# http://konamih.sakura.ne.jp/Stats/Text/Statistics.pdf
+# 統計学に関する簡潔明瞭な解説。学部共通科目教科書と併読するとよい。
+# 
+# Logistics of Blue
+# https://logics-of-blue.com/tag/%E6%99%82%E7%B3%BB%E5%88%97%E5%88%86%E6%9E%90/page/3/
+# 水産資源学が専門。時系列モデリングに関する解説が網羅的ですばらしい。
+# Rコードつき。
+# 実は状態空間モデルから勉強してもいいんじゃないかという気がする。
+# 
+# 
+# 1. 日本における労働時間に関するデータをあつめる
+# あらかじめ総務省統計局ホームページにて、apiを使うを取得する。
+# https://www.e-stat.go.jp/api/api-info/api-guide
+# 
+# API：Application Programming Interface
+# いろいろな機能を提供するサーバを制御するための暗証番号みたいなもの
+# APIをコードに直書きすると、漏洩したときに大変なことになる。なので、別ファイルに書いて、読み込むようにする
+# 
+# APIのIDを書いたRファイルを読み込む
+# Rファイルは別に自分でつくる
+# File -> New file -> R scriptでつくれる。拡張子は.r
+appId <- source("appId.r")
+# 
+# 総務省estatからAPIを用いてデータ読み込む
+# estatapiパッケージを使う。
+# install.packages()を使ってインストールする。1回でいい。
+# 使うたびにlibrary()を使って読み込む。
+# 詳細は
+# https://yutannihilation.github.io/estatapi/　を参照。
+# 
+# まずデータリストをつくる
+wh_data_list <- 
+  estatapi::estat_getStatsList(
+    # APIのIDを読み込む
+    # appId$valueは、
+    # appIdというオブジェクトのvalueという変数
+    # を意味する。
+    # $の使い方は、Rでデータを扱うにはとっても重要。なれておくように。
+    appId = appId$value,
+    searchWord = "労働時間"
+    )%>% 
+  # 長期時系列データのみを取り出す。
+  # 時間が経過するにつれてどう変化するか知りたいのですから。
+  dplyr::filter(
+    # stringrパッケージは、文字列処理に便利。
+    # tidyverseに含まれるから、あらためてインストールする必要はない。
+    # stringr::str_detect()は、条件に合う文字列を含むデータを取り出す。
+    # ^や*の使い方、その他詳細はチートシート参照。
+    # help -> cheetsheetsでstringrに関するチートシートをみられる。
+    stringr::str_detect(
+      STATISTICS_NAME, 
+      "^毎月勤労統計調査　全国調査 長期時系列表" 
+      )
+    ) %>% 
+  dplyr::filter(
+    stringr::str_detect(
+      TITLE, 
+      "^実数・指数累積データ 所定外労働時間　季節実数・指数累積データ 実数関連・月次"
+      )
+    )
+# リストに含まれる必要なデータだけを抽出する
+# とりあえず労働時間に関する系列のみ
+wh_data_table <- 
+  estatapi::estat_getStatsData(
+    appId = appId,
+    # リストにある使えそうなデータを選ぶ。
+    # ここでは月次労働時間を含むデータを取り出す。
+    # wh_data_list[2,1]$`@id`の意味は、以下に示すとおり。
+    # wh_data_listはリストを収納したオブジェクト名
+    # [2,1]はオブジェクトの2行一列目
+    # $は列を選ぶときに使う記号
+    # `@id`は列名。
+    statsDataId = wh_data_list[2,1]$`@id`
+    ) %>% 
+  dplyr::filter(表章項目 %in% c(
+    "一人平均月間所定内労働時間数",
+    "一人平均月間所定外労働時間数",
+    "一人平均月間総実労働時間数"
+    )
+    )
+# 
+# ---
+# おまけ　その1
+# MSExcelなどでデータを一覧したい場合、保存すればいい。
+# csv形式が手っ取り早い
+# write_excel_csv()で保存しないと文字化けする
+# 参考
+# https://qiita.com/nozma/items/6de3e636d175cc3d6e3f
+readr::write_excel_csv(
+  x = wh_data_table, 
+  file = "wh_data_table.csv"
+  )
+# おまけ　その2
+# どこに何が書いてあるかは、列名を使って参照する。
+# 使う関数は以下に示す通り。
+# base::levels() カッコ内にある因子型変数について、水準を示す
+# base::factor() カッコ内にある変数を因子型に変換する
+# カッコ内にある変数を因子型に変換する
+# df$col01 とあるデータフレームdfから、col01という名前を持つ列だけを表示する
+# 列名は取得したデータを表示させるか、MSExcelに保存してコピペするか、
+# colnames()で取得する
+levels(
+  factor(
+    wh_data_table$表章項目
+    )
+  )
+levels(factor(wh_data_table$就業形態))
+levels(factor(wh_data_table$事業所規模))
+levels(factor(wh_data_table$`産業分類(200711改定)`))
+levels(factor(wh_data_table$年月２))
+# ---
+# 
+# データを取得する
+wh_data_table_01 <- 
+  # データをサーバか読み込む
+  # 読み込む前に、データを収納したオブジェクトを実行、変数名や構造を
+  # 確認するとよい。
+  wh_data_table %>% 
+  # つかうデータだけを選ぶ
+  # コードでもいいけれど、後で作図するときに使えることがあるので、
+  # ひと目見てわかる名前がデータとして含まれる変数を取り出したほうがいい。
+  dplyr::select(
+    "表章項目", 
+    "就業形態", 
+    "事業所規模", 
+    "産業分類(200711改定)", 
+    "年月２", 
+    "value"
+  ) %>% 
+  # 変数名を変える
+  # 変数名はアルファベットにしたほうが扱いやすい。
+  # 使うパッケージは、data.table()
+  # これもtidyverseに含まれるますから
+  data.table::setnames(
+    c(
+      "trait",
+      "status",
+      "size",
+      "industry",
+      "year.month",
+      "hours"
+    )
+  ) %>% 
+  # データ型を変える
+  # 論理値や整数型、文字列、因子、その他色々。
+  # あとの分析でデータ型が物を言うので、適切に変換する。
+  # tidyverseが取り扱うデータ型は、以下を参照
+  # https://tibble.tidyverse.org/articles/types.html
+  dplyr::mutate_if(
+    is.character,# 文字列型ならば
+    .funs = factor# 因子型に置き換える
+  ) %>% 
+  # 年月データを年月日にして年月日データ型に変換する。
+  # まず、base::paste0()を用いて、
+  # 年月しか書いてないデータに日付を表現する文字列を加える。
+  # 何日でもよいが、ここでは便宜的に1日にした。すなわち、
+  # 1960/01（1960年1月） -> 1960/01/01（1960年1月1日）にする
+  # つぎに、lubridate::ymd()を用いて、
+  # 日付っぽく見える文字列を年月日データ型に変換する。
+  dplyr::mutate(
+    year.month = lubridate::ymd(
+      base::paste0(
+        year.month, 
+        "/01"
+        )
+      )
+  ) %>% 
+  # 条件に合うデータのみを取り出す
+  # データ読み込みはここでおわり
+  dplyr::filter(
+    status == "就業形態計" &
+    size %in% c(
+      "100～499人",
+      "30～99人",
+      "500人以上"
+      )
+    ) %>% 
+  # 因子型の順番を指定する
+  # 企業規模にあわせてあとから作るグラフが並ぶようにする。
+  # ここで処理しないと、Rは企業規模先頭にある数値から順番を評価する。
+  # 結果、100名~499名を30~99名よりも先に表示、順番がおかしくなる。
+  # 詳細は以下を参照。
+  # https://www.jaysong.net/RBook/factor.html
+  dplyr::mutate(
+    size = factor(
+      size,
+      levels = c(
+        "30～99人",
+        "100～499人",
+        "500人以上"
+      )
+    )
+  )
+#
+# 2. 作図する
+# 折れ線グラフ作図
+# 時系列といえば折れ線グラフ。だから折れ線グラフを作図する
+# グラフオブジェクトをつくる
+wh_data_line_01 <- 
+  # データを読み込む
+  wh_data_table_01 %>%
+  # グループ毎にわけてネストする
+  # cheetsheetの"List manipulation with purrr"をみながらやるといいですよ
+  group_by(industry) %>% 
+  nest() %>%
+  # グループ毎に折れ線グラフを作図、figureと名付けた新たな変数に収納する
+  # purrr::map()は、繰り返し作業にきわめて便利な関数。使い方を身につけるといい
+  dplyr::mutate(
+    figure = purrr::map(
+      # nestすると、特になにも変数名を指定しなくても
+      # dataと名付けられたリストが作成される
+      # 内部には、nestにつかった因子以外のデータが収納されている
+      data,
+      ~
+        # グラフエリアを宣言する
+        ggplot2::ggplot(
+          data = .,#使うデータは、dataです
+          aes(
+            x = year.month, 
+            y = hours, 
+            colour = trait#色は区分ごとに変える
+            )
+        ) + 
+        # 折れ線グラフをつくると宣言する
+        geom_line() +
+        labs(
+          title = industry,
+          x = "年次",
+          y = "労働時間（単位：時間）",
+          colour = "区分"
+        ) +
+        # カラーユニバーサルデザインを意識した配色にする
+        scale_colour_okabeito() +
+        # 複数のグラフをタイル状にならべる
+        facet_wrap(
+          ~ size, 
+          nrow = 2,
+          ncol = 2,
+          scale = "free"
+          ) +
+        # いつものテーマ
+        theme_classic() +
+        # 日本語をRでつくるグラフに埋め込むにはちょっとコツがいる
+        # フォントを指定してあげないと、RStudio上で表示されるかもしれないが
+        # pdf形式やpng形式にて保存したときに文字化けする。
+        # ここに書いてあるフォントファミリーは、諸君が使うRStudioだとないかも
+        # しれない。なので、ちょっと工夫が必要。
+        # 詳細は以下を参照
+        # https://ill-identified.hatenablog.com/entry/2020/10/03/200618
+        theme(
+          text = element_text(family =  "Noto Serif CJK JP", face = "plain"),
+          legend.position = "bottom",
+          legend.text = element_text(size = 8),
+          strip.background = element_blank()
+        )
+    )
+  )
+# 保存する
+# 複数ページあるpdfファイルにグラフを保存するおまじない
+grDevices::cairo_pdf(
+  filename = "wh_data_line_01.pdf",# ファイル名
+  family =  "Noto Serif CJK JP",# フォントファミリー
+  onefile = TRUE # 複数あるグラフオブジェクトを単一pdfファイル内にまとめる
+  )
+# グラフオブジェクトを実行
+wh_data_line_01$figure
+# おまじないはおしまい
+dev.off()
+
+# 
+##
+### --- END --- ###
+
