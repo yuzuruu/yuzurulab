@@ -516,7 +516,7 @@ wh_data_list <-
 # とりあえず労働時間に関する系列のみ
 wh_data_table <- 
   estatapi::estat_getStatsData(
-    appId = appId,
+    appId = appId$value,
     # リストにある使えそうなデータを選ぶ。
     # ここでは月次労働時間を含むデータを取り出す。
     # wh_data_list[2,1]$`@id`の意味は、以下に示すとおり。
