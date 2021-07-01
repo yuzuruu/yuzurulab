@@ -28,7 +28,7 @@ library(khroma)
 library(viridis)
 library(ggtext)
 library(GGally)
-
+library(estatapi)
 # irisデータで散布図を書いてみる
 # irisデータは、統計解析パッケージのお勉強に最もよく使われるデータ
 # アヤメの花のパーツ寸法に関するデータ
@@ -645,6 +645,11 @@ wh_data_table_01 <-
       )
     )
   )
+# ダウンロードしたデータを保存する
+# 毎度毎度保存すると大変なので、保存。
+saveRDS(wh_data_table_01, "wh_data_table_01.rds")
+# 保存したデータを読み込む
+wh_data_table_01 <- readRDS("wh_data_table_01.rds")
 #
 # 2. 作図する
 # 折れ線グラフ作図
@@ -720,8 +725,209 @@ grDevices::cairo_pdf(
 wh_data_line_01$figure
 # おまじないはおしまい
 dev.off()
-
 # 
 ##
 ### --- END --- ###
-
+##
+#
+#
+# ---- stat.working.hours.02 ----
+# こんどは「労働力調査」データを使う
+# 「労働時間」をキーワードにすると、いまひとつひっかかりがよくない。
+# おもいきって統計調査名をキーワードに使おう。
+# 前回と同じあたりはコメントによる解説は省略した
+wh_data_list <- 
+  estatapi::estat_getStatsList(
+    appId = appId$value,
+    searchWord = "労働力調査"
+  ) %>% 
+  # 正規表現を用いて就業時間に関するデータリストのみを作成する。
+  # dplyr::filter()は指定条件に合致する行だけを抽出する関数。
+  # 必要なデータはどれか、一度ダウンロードしたリストをcsvファイルに
+  # 保存して確認してもよい。
+  # 保存するには、 %>% の手前まで実行、
+  # readr::write_excel_csv(wh_data_list, "foo.csv")
+  # とすればよい。
+  # write_csv()とすると、Windows機で読み込んだ場合文字化けして読めないことがある。
+  dplyr::filter(
+    # string::str_detect()は指定条件に合致する箇所を見つけてTRUEを返す関数
+    stringr::str_detect(
+      TITLE, 
+      # 正規表現を書く。
+      # 正規表現は、文字列にみられるパターンを記号で表現する書き方。
+      # ここでは、
+      # なんらかの文字列(.)+就業時間(就業時間)+全角カッコ（[）]）
+      # もしくは
+      # なんらかの文字列+就業時間+半角カッコ
+      # を含む文字列という意味。
+      "(.就業時間[（]|.就業時間[(])" 
+    )
+  ) %>% 
+  # 不要な語句を含まないデータのみを抽出する。
+  dplyr::filter(
+    # !（びっくりマーク）は、否定を意味する論理演算子。
+    !stringr::str_detect(
+      TITLE,
+      # また出た正規表現
+      # 希望者数、就業者数ん、ないし雇用者数という文字列を含むという意味。
+      "(希望者数|就業者数|雇用者数)"
+      )
+  ) %>% 
+  # TITLE列とCYCLE列を使って整列する。
+  # 整列したほうが後々見やすいから。
+  dplyr::arrange(TITLE, CYCLE)
+# リストを一度ダウンロードして、どんな変数が入っているか確認する
+readr::write_excel_csv(wh_data_list, "wh_data_list.csv")
+# データリストの部分集合を作る。
+# 必要なデータだけを含むシンプルなリストがいいにきまってますから。
+# 関数挙動解説は省略。
+wh_data_list_sub <- 
+  wh_data_list %>% 
+  dplyr::filter(
+    stringr::str_detect(
+      TITLE, 
+      "(農林業・非農林業，従業上の地位別平均週間就業時間及び延週間就業時間（1967年～2010年）|農林業・非農林業，従業上の地位別平均週間就業時間及び延週間就業時間（2011年～）)"
+    )
+  )
+# 
+# データを取得する
+# 関数の特性上、一度に1項目しかデータを取得できない。
+# 項目毎にいくつかオブジェクトを作成、データを代入する。
+# あとで各オブジェクトを結合すればいい。
+# オブジェクトが3つ以上になりそうなら、purrr::map()関数を利用して
+# 繰り返し処理させたほうがいいでしょう。
+# 
+# オブジェクトその1
+wh_data_table_01 <- 
+  estatapi::estat_getStatsData(
+    appId = appId$value,
+    statsDataId = wh_data_list_sub$`@id`[1]
+  ) 
+# オブジェクトその2
+wh_data_table_02 <- 
+  estatapi::estat_getStatsData(
+    appId = appId$value,
+    statsDataId = wh_data_list_sub$`@id`[2]
+  ) 
+# 上で取得したデータを代入したオブジェクトを結合する
+wh_data_table <- 
+  dplyr::bind_rows(
+    wh_data_table_01, 
+    wh_data_table_02
+    )
+# 再利用できるようにデータを保存する
+saveRDS(wh_data_table, "wh_data_table.rds")
+# 
+# 扱いやすいデータに整形する。
+# 必要な変数（列）をとりだして、名前を変えて、扱いやすい形式に変換する
+wh_data_table <- 
+  # データを読み込む
+  readRDS("wh_data_table.rds") %>%
+  # 必要な変数を取り出す
+  dplyr::select(
+    "表章項目",
+    "産業",
+    "性別",
+    "従業上の地位",
+    "時間軸（年次）",
+    "value"
+  ) %>% 
+  # 変数名変更
+  data.table::setnames(
+    c(
+      "trait",
+      "industry",
+      "gender",
+      "position",
+      "year",
+      "working_hours"
+    )
+  ) %>% 
+  # データ型を変換
+  dplyr::mutate(
+    # 産業に関する標記を統一する。
+    # あらかじめcsvファイルにて確認した結果によれば、
+    # 「産業」と「産業*」という項目があることが判明した。
+    # 資料を眺めたところ、あまり問題はなさそう。「産業」に変更する。
+    # stringr::str_replace()はなにかを置換する関数。
+    industry = stringr::str_replace(
+      industry, 
+      # [:punct:]に該当する変数を
+      # [:punct:]は、記号を意味する正規表現。
+      # 詳細はstringrパッケージチートシートを。
+      # チートシートはヘルプから参照可能。
+      pattern = "[:punct:]", 
+      # なにもない文字列に置換（削除）する
+      replacement = ""
+      ),
+    year = lubridate::ymd(
+      paste0(
+        stringr::str_sub(
+          year, 
+          1,
+          4
+          ),
+        "/01/01"
+        )
+      )
+  )
+# 
+# 作図
+# 前回と同じだから、解説省略。
+wh_data_line_02 <- 
+  wh_data_table %>% 
+  group_by(
+    trait, 
+    industry, 
+    position
+    ) %>% 
+  nest() %>% 
+  dplyr::mutate(
+    figure = purrr::map(
+      data,
+      ~
+        ggplot2::ggplot(
+          data = .,
+          aes(
+            x = year,
+            y = working_hours
+          )
+        ) +
+        geom_line() +
+        facet_wrap(
+          ~ gender,
+          ncol = 2
+        ) +
+        labs(
+          title = paste0(trait,"(", industry, "・", position, ")"),
+          x = "年次（1967-2017）",
+          y = "労働時間"
+        ) +
+        theme_classic() +
+        theme(
+          text = element_text(family =  "Noto Serif CJK JP", face = "bold"),
+          legend.position = "bottom",
+          legend.text = element_text(size = 8),
+          strip.background = element_blank()
+        )
+    )
+  )
+# 念の為作図できているか、1つ目の図だけ表示させて確認
+wh_data_line_02$figure[[1]]  
+# 保存する
+# 複数ページあるpdfファイルにグラフを保存するおまじない
+grDevices::cairo_pdf(
+  filename = "wh_data_line_02.pdf",# ファイル名
+  family =  "Noto Serif CJK JP",# フォントファミリー。適当に変更。
+  onefile = TRUE # 複数あるグラフオブジェクトを単一pdfファイル内にまとめる
+)
+# グラフオブジェクトを実行
+wh_data_line_02$figure
+# おまじないはおしまい
+dev.off()
+# 
+# 
+##
+### --- END --- ###
+##
+#
